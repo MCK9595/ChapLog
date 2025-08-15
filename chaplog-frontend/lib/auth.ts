@@ -13,7 +13,12 @@ export interface User {
 export const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   const token = localStorage.getItem(TOKEN_KEY);
-  console.log('Getting auth token:', token ? token.substring(0, 20) + '...' : 'null');
+  
+  const isDebug = process.env.NEXT_PUBLIC_API_DEBUG === 'true';
+  if (isDebug) {
+    console.log('Getting auth token:', token ? token.substring(0, 20) + '...' : 'null');
+  }
+  
   return token;
 };
 
@@ -35,7 +40,16 @@ export const getUser = (): User | null => {
 
 export const setAuthData = (token: string, refreshToken: string, user?: User) => {
   if (typeof window === 'undefined') return;
-  console.log('Setting auth data:', { token: token?.substring(0, 20) + '...', refreshToken: refreshToken?.substring(0, 20) + '...', user });
+  
+  const isDebug = process.env.NEXT_PUBLIC_API_DEBUG === 'true';
+  if (isDebug) {
+    console.log('Setting auth data:', { 
+      token: token?.substring(0, 20) + '...', 
+      refreshToken: refreshToken?.substring(0, 20) + '...', 
+      user 
+    });
+  }
+  
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   if (user) {

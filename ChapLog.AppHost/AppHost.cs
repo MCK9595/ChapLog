@@ -12,18 +12,19 @@ var chaplogdb = postgres.AddDatabase("chaplogdb");
 // Migration Service - runs first to set up the database
 var migrationService = builder.AddProject<Projects.ChapLog_MigrationService>("migration-service")
     .WithReference(chaplogdb)
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WaitFor(chaplogdb);
 
 // API Service - depends on migration service completion
 var apiService = builder.AddProject<Projects.ChapLog_Api>("api")
     .WithReference(chaplogdb)
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WaitFor(migrationService);
 
 // Frontend - Next.js application
-var frontend = builder.AddNpmApp("frontend", "../chaplog-frontend", "dev")
+builder.AddNpmApp("frontend", "../chaplog-frontend", "dev")
     .WithReference(apiService)
+    .WithEnvironment("BROWSER", "none")
+    .WithEnvironment("NODE_TLS_REJECT_UNAUTHORIZED", "0")
+    .WithEnvironment("NEXT_PUBLIC_API_BASE_URL", apiService.GetEndpoint("http"))
     .WaitFor(apiService)
     .WithHttpEndpoint(env: "PORT")
     .WithExternalHttpEndpoints();

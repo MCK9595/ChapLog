@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ChapLog is a reading log web application for tracking reading progress and reflections in diary format. The system uses .NET Aspire 9.4 for container orchestration with a clean architecture pattern.
+ChapLog is a reading log web application for tracking reading progress and reflections in diary format. The system uses .NET Aspire 9.4.1 for container orchestration with a clean architecture pattern.
 
 ## Architecture
 
 ### Technology Stack
 - **Backend**: .NET 9.0, ASP.NET Core Web API, Entity Framework Core, PostgreSQL
 - **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS + shadcn/ui
-- **Orchestration**: .NET Aspire 9.4 with PostgreSQL, Redis, Seq
+- **Orchestration**: .NET Aspire 9.4.1 with PostgreSQL, Redis, Seq
 - **Testing**: xUnit, .NET Aspire Testing, Playwright
 
 ### Service Dependencies

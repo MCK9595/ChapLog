@@ -1,19 +1,33 @@
 import axios, { AxiosError } from 'axios';
 import { getAuthToken, removeAuthData, getRefreshToken, setAuthData } from './auth';
 
-// Use Next.js API routes that proxy to Aspire services
+// API Base URL - Next.js プロキシ経由でCORS問題解決
+// next.config.js rewrites により /api/* → Aspire Service Discovery URL へプロキシ
+const baseURL = '/api';
+
+if (process.env.NEXT_PUBLIC_API_DEBUG === 'true') {
+  console.log('API Client - Using Next.js proxy:', baseURL);
+  console.log('API Client - Aspire Service Discovery URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+}
+
 const apiClient = axios.create({
-  baseURL: '',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10秒タイムアウト
 });
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
     const token = getAuthToken();
-    console.log('API Client - Adding token to request:', config.url, token ? 'Token present' : 'No token');
+    const isDebug = process.env.NEXT_PUBLIC_API_DEBUG === 'true';
+    
+    if (isDebug) {
+      console.log('API Client - Request:', config.method?.toUpperCase(), config.url, token ? 'Token present' : 'No token');
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,20 +40,36 @@ apiClient.interceptors.request.use(
 
 // Response interceptor to handle token refresh
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const isDebug = process.env.NEXT_PUBLIC_API_DEBUG === 'true';
+    if (isDebug) {
+      console.log('API Client - Response:', response.status, response.config.url);
+    }
+    return response;
+  },
   async (error: AxiosError) => {
-    console.log('API Client - Response error:', error.response?.status, error.config?.url);
+    const isDebug = process.env.NEXT_PUBLIC_API_DEBUG === 'true';
+    if (isDebug) {
+      console.log('API Client - Response error:', error.response?.status, error.config?.url);
+    }
+    
     const originalRequest = error.config as any;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      console.log('API Client - Attempting token refresh');
+      if (isDebug) {
+        console.log('API Client - Attempting token refresh');
+      }
       originalRequest._retry = true;
 
       try {
         const refreshToken = getRefreshToken();
-        console.log('API Client - Refresh token available:', !!refreshToken);
+        if (isDebug) {
+          console.log('API Client - Refresh token available:', !!refreshToken);
+        }
         if (!refreshToken) {
-          console.log('API Client - No refresh token, redirecting to login');
+          if (isDebug) {
+            console.log('API Client - No refresh token, redirecting to login');
+          }
           removeAuthData();
           window.location.href = '/login';
           return Promise.reject(error);
@@ -50,13 +80,17 @@ apiClient.interceptors.response.use(
         });
 
         const { token: newToken, refreshToken: newRefreshToken, user } = response.data;
-        console.log('API Client - Token refresh successful');
+        if (isDebug) {
+          console.log('API Client - Token refresh successful');
+        }
         setAuthData(newToken, newRefreshToken, user);
 
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        console.log('API Client - Token refresh failed:', refreshError);
+        if (isDebug) {
+          console.log('API Client - Token refresh failed:', refreshError);
+        }
         removeAuthData();
         window.location.href = '/login';
         return Promise.reject(refreshError);
